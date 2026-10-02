@@ -3,17 +3,25 @@
 --  Один файл: логика + встроенные актуальные цены
 --  Игрок запускает: loadstring(game:HttpGet("URL"))()
 -- ============================================
+-- Ждём полной загрузки игры (иначе LocalPlayer/PlayerGui могут быть nil -> скрипт упадёт)
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
 print("===== ADOPT ME PRICE OVERLAY (public) =====")
 
-local PG = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+-- Надёжный поиск PlayerGui с ожиданием LocalPlayer при необходимости
+local function get_player_gui()
+    local p = game.Players.LocalPlayer
+    if not p then
+        game.Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+        p = game.Players.LocalPlayer
+    end
+    if not p then return nil end
+    return p:FindFirstChild("PlayerGui")
+end
+local PG = get_player_gui()
 local DISCORD_URL = "https://discord.gg/QsxA7ybDa"
-
--- ===== НАСТРОЙКИ (панель настроек) =====
-local settings = {
-    showPrices = true,     -- показывать цены на слотах
-    showBackpack = true,   -- считать/показывать стоимость рюкзака
-    showTradePanel = true, -- показывать панель анализа трейда
-}
 
 -- ===== ВСТРОЕННЫЕ ДАННЫЕ (заполняет генератор / GitHub Actions) =====
 -- Структура: ["rbxassetid://..."] = { name="...", prices={ ["default"]=цена, ... } }
@@ -1491,26 +1499,21 @@ local function scan_container(container, results)
                     if price then
                         local stack = get_stack_count(slot)
                         local total = price * stack
-                        if settings.showPrices then
-                            local text = (stack > 1) and ("x" .. stack .. " = " .. format_price(total) .. "₽") or (format_price(price) .. "₽")
-                            make_label(slot, text, false)
-                        else
-                            local lbl = slot:FindFirstChild("PriceOverlay")
-                            if lbl then lbl:Destroy() end
-                        end
+                        local text = (stack > 1) and ("x" .. stack .. " = " .. format_price(total) .. "₽") or (format_price(price) .. "₽")
+                        make_label(slot, text, false)
 
                         if results then
                             results.total = (results.total or 0) + total
                             results.count = (results.count or 0) + 1
                         end
                     else
-                        if settings.showPrices then make_label(slot, "?", true) end
+                        make_label(slot, "?", true)
                         if results then
                             results.unknown = (results.unknown or 0) + 1
                         end
                     end
                 else
-                    if settings.showPrices then make_label(slot, "?", true) end
+                    make_label(slot, "?", true)
                     if results then
                         results.unknown = (results.unknown or 0) + 1
                     end
@@ -1528,35 +1531,7 @@ local function scan_backpack()
     for _, obj in pairs(backpack:GetDescendants()) do
         if obj.Name == "pets" then pets = obj; break end
     end
-    if not pets then return end
-
-    local res = {total = 0, count = 0, unknown = 0}
-    scan_container(pets, res)
-
-    -- Стоимость рюкзака
-    local total_frame = backpack:FindFirstChild("BackpackTotal")
-    if settings.showBackpack then
-        if not total_frame or not total_frame.Parent then
-            total_frame = Instance.new("TextLabel")
-            total_frame.Name = "BackpackTotal"
-            total_frame.Size = UDim2.new(0, 260, 0, 26)
-            total_frame.Position = UDim2.new(1, -270, 0, 6)
-            total_frame.AnchorPoint = Vector2.new(1, 0)
-            total_frame.BackgroundColor3 = Color3.fromRGB(12, 12, 22)
-            total_frame.BackgroundTransparency = 0.15
-            total_frame.TextColor3 = Color3.fromRGB(255, 220, 100)
-            total_frame.TextSize = 14
-            total_frame.Font = Enum.Font.GothamBold
-            total_frame.ZIndex = 60
-            total_frame.Parent = backpack
-            local c = Instance.new("UICorner")
-            c.CornerRadius = UDim.new(0, 8)
-            c.Parent = total_frame
-        end
-        total_frame.Text = "🎒 Рюкзак: " .. format_price(res.total) .. " ₽  (" .. res.count .. ")"
-    elseif total_frame then
-        total_frame:Destroy()
-    end
+    if pets then scan_container(pets, nil) end
 end
 
 -- ===== ПАНЕЛЬ ТРЕЙДА =====
@@ -1757,11 +1732,6 @@ local function scan_trade()
     local body = neg and neg:FindFirstChild("Body")
     if not body then return end
 
-    if not settings.showTradePanel then
-        if panel then panel.Visible = false end
-        return
-    end
-
     if not panel or not panel.Parent then
         panel = create_panel(body)
     end
@@ -1801,153 +1771,7 @@ local function scan_trade()
     end
 end
 
--- ===== ПАНЕЛЬ НАСТРОЕК =====
-local settings_panel = nil
-
-local function make_toggle(p, y, text, key, color)
-    local row = Instance.new("TextButton")
-    row.Name = "Toggle_" .. key
-    row.Size = UDim2.new(1, -16, 0, 26)
-    row.Position = UDim2.new(0, 8, 0, y)
-    row.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-    row.BackgroundTransparency = 0.2
-    row.BorderSizePixel = 0
-    row.AutoButtonColor = true
-    row.TextXAlignment = Enum.TextXAlignment.Left
-    row.TextSize = 13
-    row.Font = Enum.Font.GothamBold
-    row.TextColor3 = Color3.fromRGB(220, 220, 240)
-    row.ZIndex = 110
-    row.Parent = p
-
-    local tick = Instance.new("TextLabel")
-    tick.Size = UDim2.new(0, 22, 0, 22)
-    tick.Position = UDim2.new(1, -26, 0, 2)
-    tick.BackgroundColor3 = color
-    tick.BackgroundTransparency = settings[key] and 0 or 0.7
-    tick.Text = settings[key] and "✔" or ""
-    tick.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tick.TextSize = 15
-    tick.Font = Enum.Font.GothamBold
-    tick.ZIndex = 111
-    tick.TextWrapped = false
-    tick.Parent = row
-
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 4)
-    c.Parent = tick
-
-    row.MouseButton1Click:Connect(function()
-        settings[key] = not settings[key]
-        tick.Text = settings[key] and "✔" or ""
-        tick.BackgroundTransparency = settings[key] and 0 or 0.7
-    end)
-
-    return row
-end
-
-local function create_settings_panel()
-    local gui = PG:FindFirstChild("OverlaySettingsGui")
-    if gui then gui:Destroy() end
-    gui = Instance.new("ScreenGui")
-    gui.Name = "OverlaySettingsGui"
-    gui.ResetOnSpawn = false
-    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    gui.Parent = PG
-
-    local p = Instance.new("Frame")
-    p.Name = "Header"
-    p.Size = UDim2.new(0, 200, 0, 34)
-    p.Position = UDim2.new(1, -210, 0, 6)
-    p.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-    p.BackgroundTransparency = 0.15
-    p.BorderSizePixel = 0
-    p.ZIndex = 100
-    p.Parent = gui
-
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 8)
-    c.Parent = p
-
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -34, 1, 0)
-    title.Position = UDim2.new(0, 10, 0, 0)
-    title.BackgroundTransparency = 1
-    title.Text = "⚙️ Настройки"
-    title.TextColor3 = Color3.fromRGB(220, 220, 240)
-    title.TextSize = 14
-    title.Font = Enum.Font.GothamBold
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.ZIndex = 101
-    title.Parent = p
-
-    local expand = Instance.new("TextButton")
-    expand.Size = UDim2.new(0, 24, 0, 24)
-    expand.Position = UDim2.new(1, -28, 0, 5)
-    expand.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-    expand.Text = "▾"
-    expand.TextColor3 = Color3.fromRGB(255, 255, 255)
-    expand.TextSize = 12
-    expand.Font = Enum.Font.GothamBold
-    expand.BorderSizePixel = 0
-    expand.ZIndex = 101
-    expand.Parent = p
-
-    local ec = Instance.new("UICorner")
-    ec.CornerRadius = UDim.new(0, 4)
-    ec.Parent = expand
-
-    local body = Instance.new("Frame")
-    body.Name = "Body"
-    body.Size = UDim2.new(0, 200, 0, 98)
-    body.Position = UDim2.new(0, 0, 0, 36)
-    body.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-    body.BackgroundTransparency = 0.15
-    body.BorderSizePixel = 0
-    body.ZIndex = 100
-    body.Visible = false
-    body.Parent = p
-
-    local bc = Instance.new("UICorner")
-    bc.CornerRadius = UDim.new(0, 8)
-    bc.Parent = body
-
-    make_toggle(body, 8, "Цены на слотах", "showPrices", Color3.fromRGB(0, 180, 100))
-    make_toggle(body, 38, "Стоимость рюкзака", "showBackpack", Color3.fromRGB(80, 160, 255))
-    make_toggle(body, 68, "Панель трейда", "showTradePanel", Color3.fromRGB(255, 170, 80))
-
-    local expanded = false
-    expand.MouseButton1Click:Connect(function()
-        expanded = not expanded
-        body.Visible = expanded
-        expand.Text = expanded and "▴" or "▾"
-    end)
-
-    settings_panel = p
-end
-
--- ===== МГНОВЕННЫЙ СКАН ПО СОБЫТИЯМ =====
-local function hook_instant_scan()
-    local function hook(appName)
-        pcall(function()
-            local app = PG:FindFirstChild(appName)
-            if app then
-                app:GetPropertyChangedSignal("Enabled"):Connect(function()
-                    if app.Enabled then
-                        pcall(scan_backpack)
-                        pcall(scan_trade)
-                    end
-                end)
-            end
-        end)
-    end
-    hook("BackpackApp")
-    hook("TradeApp")
-end
-
 -- ===== ЦИКЛ =====
-create_settings_panel()
-hook_instant_scan()
 print("[*] Overlay запущен. Проверка каждые 2 сек.")
 task.spawn(function()
     while true do
