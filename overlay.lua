@@ -1383,7 +1383,7 @@ local PRICES_DATA = {
     ["rbxassetid://4621220017"] = {name = "Rat Box", prices = {["default"] = 549.19}},
     ["rbxassetid://8604215904"] = {name = "RGB Reward Box", prices = {["default"] = 3.8}},
 }
-=====END_PRICES=====
+-- =====END_PRICES=====
 
 -- ===== ФУНКЦИИ =====
 local colors = {
