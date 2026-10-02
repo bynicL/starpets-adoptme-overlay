@@ -1,3 +1,4 @@
+print('MARK0: скрипт запущен')
 -- ============================================
 --  Adopt Me Price Overlay вЂ” РџРЈР‘Р›РР§РќРђРЇ Р’Р•Р РЎРРЇ
 --  РћРґРёРЅ С„Р°Р№Р»: Р»РѕРіРёРєР° + РІСЃС‚СЂРѕРµРЅРЅС‹Рµ Р°РєС‚СѓР°Р»СЊРЅС‹Рµ С†РµРЅС‹
@@ -8,6 +9,7 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
+print('MARK1: до данных')
 print("===== ADOPT ME PRICE OVERLAY (public) =====")
 
 -- РќР°РґС‘Р¶РЅС‹Р№ РїРѕРёСЃРє PlayerGui СЃ РѕР¶РёРґР°РЅРёРµРј LocalPlayer РїСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё
@@ -68,6 +70,7 @@ local PRICES_DATA = {
     ["rbxassetid://98801943598121"] = {name = "Priceless Shrimp", prices = {["default"] = 18.58, ["Fly"] = 82.66, ["Ride"] = 45.87, ["Fly|Ride"] = 137.63, ["Neon"] = 87.5, ["Neon|Ride"] = 122.5, ["Neon|Fly|Ride"] = 392.84}},
     ["rbxassetid://95214789806437"] = {name = "Aztec Egg", prices = {["default"] = 2}},
     ["rbxassetid://18515755354"] = {name = "Cheetah", prices = {["default"] = 109.9, ["Fly"] = 141.12, ["Ride"] = 125, ["Fly|Ride"] = 219.8, ["Neon"] = 780.53, ["Neon|Ride"] = 650}}
+print('MARK2: данные загружены')
 =====END_PRICES=====
 
 
