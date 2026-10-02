@@ -1,0 +1,51 @@
+name: Update Prices
+
+on:
+  schedule:
+    # Каждый час (можно поменять интервал)
+    - cron: '0 * * * *'
+  workflow_dispatch:  # ручной запуск из вкладки Actions
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # чтобы коммитить обновлённые файлы
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      # 1) Собираем свежие цены с API StarPets (prices.json + realName)
+      - name: Run parser
+        run: python parser3.py
+        env:
+          PYTHONIOENCODING: utf-8
+
+      # 2) Автоматически сопоставляем иконки игры с именами сайта (icons_priced.json)
+      - name: Run merge
+        run: python merge.py
+
+      # 3) Встраиваем актуальные цены в overlay.lua (игрок получает их через loadstring)
+      - name: Generate Lua
+        run: python generate_lua.py
+
+      # 4) Коммитим и пушим изменения, если они есть
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Следим за всеми сгенерированными/обновляемыми файлами
+          git add -A
+          git diff --cached --quiet || git commit -m "chore: auto-update prices $(date -u +'%Y-%m-%d %H:%M')"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
