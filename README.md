@@ -13,7 +13,7 @@
 3. Вставь в консоль Xeno одну строку:
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ВАШ_НИК/ВАШ_РЕПО/refs/heads/main/overlay.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/bynicL/starpets-adoptme-overlay/refs/heads/main/overlay.lua"))()
 ```
 
 4. Нажми Execute. Готово ✅
