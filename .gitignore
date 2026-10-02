@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Временные/тестовые файлы (не нужны в репозитории)
+_test_*.py
+_bal*.py
+*_check.py
+test_*.py
+check*.py
+explore_*.py
+
+# Локальные данные/отчёты (генерируются парсером/мержем — не коммитим)
+server.py
+overlay_test.lua
+unknown_assets.json
+inventory_aliases.json
+prices.json
+prices_backup.json
+icons_priced.json
+unmatched_report.txt
+
+# ОС
+.DS_Store
+Thumbs.db
