@@ -14,8 +14,8 @@ if hasattr(sys.stdout, "reconfigure"):
 
 SCRIPT_FILE = "overlay.lua"
 PRICES_FILE = "icons_priced.json"
-BEGIN = "=====BEGIN_PRICES====="
-END = "=====END_PRICES====="
+BEGIN = "-- =====BEGIN_PRICES====="
+END = "-- =====END_PRICES====="
 
 
 def lua_value(v):
@@ -78,15 +78,25 @@ def main():
     with open(SCRIPT_FILE, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Заменяем блок между маркерами
+    # Заменяем блок между маркерами.
+    # Ищем позиции маркеров как подстрок (BEGIN/END уже содержат ведущее "-- ").
     start = content.find(BEGIN)
-    end = content.find(END)
-    if start == -1 or end == -1:
+    end_index = content.find(END)
+    if start == -1 or end_index == -1:
         raise SystemExit("Маркеры BEGIN/END не найдены в %s" % SCRIPT_FILE)
 
-    start_content = content[: start + len(BEGIN)] + "\n"
-    end_content = content[end:]
-    new_content = start_content + data_block + "\n" + end_content
+    # Всё, что ИДЁТ ДО строки BEGIN (включая перевод строки перед ней) — без изменений.
+    start_content = content[:start]
+
+    # Только данные между маркерами (в <иные части>, которые могут быть вложены)
+    # берём ХВОСТ: всё, что после строки END.
+    line_end = content.find("\n", end_index)  # конец строки END-маркера
+    if line_end == -1:
+        line_end = len(content)
+    tail = content[line_end:]  # после END, с \n
+
+    # Собираем заново: префикс + BEGIN + блок данных + END + хвост.
+    new_content = start_content + BEGIN + "\n" + data_block + "\n" + END + tail
 
     with open(SCRIPT_FILE, "w", encoding="utf-8") as f:
         f.write(new_content)
