@@ -11,10 +11,7 @@
 1. Открой **Adopt Me** в Roblox и зайди на сервер.
 2. Открой инжектор **Xeno** и подключись к процессу Roblox.
 3. Вставь в консоль Xeno одну строку:
-
-```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/bynicL/starpets-adoptme-overlay/refs/heads/main/overlay.lua"))()
-```
+https://funpay.com/users/5214196/
 
 4. Нажми Execute. Готово ✅
    - Цены появятся в **левом нижнем углу** каждого слота с питомцем/предметом (без фоновой полосы).
